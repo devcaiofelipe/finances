@@ -2,16 +2,19 @@ import React, { useContext, useState, useEffect } from 'react';
 import Header from '../../components/Header/index.js';
 import HistoricoList from '../../components/HistoricoList/index.js'
 import firebase from '../../services/firebaseConnection.js';
-import { Alert } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import { Alert, TouchableOpacity, Platform } from 'react-native';
 import { format, isBefore } from 'date-fns';
 import { AuthContext } from '../../contexts/auth';
-import { Background, Container, Nome, Saldo, Title, List } from './styles.js';
+import { Background, Container, Nome, Saldo, Title, List, Area } from './styles.js';
+import DatePicker from '../../components/DatePicker';
 
 
 export default function Home() {
     const [historico, setHistorico] = useState([]);
     const [saldo, setSaldo] = useState(0);
-
+    const [newDate, setNewDate] = useState(new Date()); 
+    const [showCalendar, setShowCalendar] = useState(null);
     const { user } = useContext(AuthContext);
     const uid = user && user.uid;
 
@@ -38,7 +41,7 @@ export default function Home() {
                                      })
                                 }
         loadList();
-    }, []);
+    }, [newDate]);
 
     function handleDelete(data) {
         const [day, month, year] = data.date.split('/');
@@ -71,6 +74,20 @@ export default function Home() {
         })
     };
 
+    function handleShowPicker() {
+        setShowCalendar(true);
+    };
+
+    function handleClosePicker() {
+        setShowCalendar(false);
+    };
+
+    const onChange = (date) => {
+        setShowCalendar(Platform.OS === 'ios');
+        setNewDate(date);
+        console.log(date)
+    }
+
     return(
         <Background>
             <Header/>
@@ -78,12 +95,25 @@ export default function Home() {
                 <Nome>{ user && user.nome }</Nome>
                 <Saldo>R$ {saldo}</Saldo>
             </Container>
-            <Title>Ultimas movimentações</Title>
+
+            <Area>
+                <TouchableOpacity onPress={handleShowPicker}>
+                    <Icon name="event" color="#FFF" size={30}/>
+                </TouchableOpacity>
+                <Title>Ultimas movimentações</Title>
+            </Area>
             <List
             showsVerticalScrollIndicator={false}
             data={historico}
             keyExtractor={item => item.key}
             renderItem={({ item }) => <HistoricoList data={item} deleteItem={handleDelete}/> }/>
+            { showCalendar && (
+                <DatePicker 
+                onClose={handleClosePicker}
+                date={newDate}
+                onChange={onChange}
+                />
+            )}
         </Background>
     
     )
